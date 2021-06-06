@@ -24,6 +24,7 @@ const char *mqtt_broker = "90smobsters.com";
 
 const char *topic_kipas = "/home/bedroom/kipas/0";
 const char *topic_lampu = "/home/bedroom/lampu/0";
+const char *topic_bedroom_status = "/home/bedroom/status";
 
 const char *mqtt_username = "emqx";
 const char *mqtt_password = "public";
@@ -80,7 +81,7 @@ void setup()
     }
 
     // publish and subscribe
-    client.publish(topic_lampu, "hello emqx");
+    client.publish(topic_bedroom_status, "Bedroom Connected!");
     client.subscribe(topic_kipas);
     client.subscribe(topic_lampu);
 }
