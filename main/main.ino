@@ -12,6 +12,8 @@
 #define SWITCH_ON   LOW
 #define SWITCH_OFF  HIGH
 
+#define HEARTBEAT_PERIOD 30000u  // in ms
+
 const char *on = "ON";
 const char *off = "OFF";
 
@@ -22,9 +24,10 @@ const char *password = "78933476";  // Enter WiFi password
 // MQTT Broker
 const char *mqtt_broker = "90smobsters.com";
 
-const char *topic_kipas = "/home/bedroom/kipas/0";
-const char *topic_lampu = "/home/bedroom/lampu/0";
-const char *topic_bedroom_status = "/home/bedroom/status";
+const char *topic_lampu_upright_0 = "/home/bedroom/lampu/0";
+const char *topic_lampu_upright_1 = "/home/bedroom/lampu/1";
+const char *topic_bedroom_status_state = "/home/bedroom/status/state";
+const char *topic_bedroom_status_timestamp = "/home/bedroom/status/timestamp";
 
 const char *mqtt_username = "emqx";
 const char *mqtt_password = "public";
@@ -81,9 +84,9 @@ void setup()
     }
 
     // publish and subscribe
-    client.publish(topic_bedroom_status, "Bedroom Connected!");
-    client.subscribe(topic_kipas);
-    client.subscribe(topic_lampu);
+    client.publish(topic_bedroom_status_state, "ACTIVE");
+    client.subscribe(topic_lampu_upright_0);
+    client.subscribe(topic_lampu_upright_1);
 }
 
 void callback(char *topic, byte *payload, unsigned int length)
@@ -103,7 +106,7 @@ void callback(char *topic, byte *payload, unsigned int length)
     command = (char *) malloc(length);
     memcpy(command, payload, length);
 
-    if( strcmp( topic, topic_kipas ) == 0 )
+    if( strcmp( topic, topic_lampu_upright_0 ) == 0 )
     {
         if( memcmp( command, on, 2 ) == 0 )
         {
@@ -116,7 +119,7 @@ void callback(char *topic, byte *payload, unsigned int length)
             digitalWrite( kipas0Pin, kipas0State );
         }
     }
-    else if( strcmp( topic, topic_lampu ) == 0 )
+    else if( strcmp( topic, topic_lampu_upright_1 ) == 0 )
     {
         if( memcmp( command, on, 2 ) == 0 )
         {
@@ -135,5 +138,17 @@ void callback(char *topic, byte *payload, unsigned int length)
 
 void loop()
 {
+    static unsigned long lastHeartbeatMs = 0u;
+    if( (millis() - lastHeartbeatMs) >= HEARTBEAT_PERIOD )
+    {
+        lastHeartbeatMs = millis();
+        String timestamp = String(lastHeartbeatMs);
+        unsigned int str_len = timestamp.length() + 1;
+        char char_array[str_len];
+        timestamp.toCharArray(char_array, str_len);
+
+        client.publish(topic_bedroom_status_state, "ACTIVE");
+        client.publish(topic_bedroom_status_timestamp, char_array);
+    }
     client.loop();
 }
