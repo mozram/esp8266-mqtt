@@ -63,6 +63,9 @@ void setup()
     }
     Serial.println("Connected to the WiFi network");
 
+    WiFi.setAutoReconnect(true);
+    WiFi.persistent(true);
+
     //connecting to a mqtt broker
     client.setServer(mqtt_broker, mqtt_port);
     client.setCallback(callback);
