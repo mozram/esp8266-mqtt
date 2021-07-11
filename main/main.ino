@@ -9,6 +9,11 @@
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
 
+#include <Arduino.h>
+#include <ESPAsyncTCP.h>
+#include <ESPAsyncWebServer.h>
+#include <AsyncElegantOTA.h>
+
 #define SWITCH_ON   LOW
 #define SWITCH_OFF  HIGH
 
@@ -18,8 +23,8 @@ const char *on = "ON";
 const char *off = "OFF";
 
 // WiFi
-const char *ssid = "Ramli_wifi"; // Enter your WiFi name
-const char *password = "78933476";  // Enter WiFi password
+const char *ssid = "CEF51_MaxisBroadband"; // Enter your WiFi name
+const char *password = "23230457";  // Enter WiFi password
 
 // MQTT Broker
 const char *mqtt_broker = "90smobsters.com";
@@ -42,6 +47,7 @@ bool lampu0State = SWITCH_OFF;
 
 WiFiClient espClient;
 PubSubClient client(espClient);
+AsyncWebServer server(80);
 
 void setup()
 {
@@ -55,13 +61,18 @@ void setup()
     digitalWrite(lampu0Pin, lampu0State);
 
     // connecting to a WiFi network
+    WiFi.mode(WIFI_STA);
     WiFi.begin(ssid, password);
     while (WiFi.status() != WL_CONNECTED)
     {
         delay(500);
         Serial.println("Connecting to WiFi..");
     }
-    Serial.println("Connected to the WiFi network");
+    Serial.println("");
+    Serial.print("Connected to ");
+    Serial.println(ssid);
+    Serial.print("IP address: ");
+    Serial.println(WiFi.localIP());
 
     WiFi.setAutoReconnect(true);
     WiFi.persistent(true);
@@ -90,6 +101,14 @@ void setup()
     client.publish(topic_bedroom_status_state, "ACTIVE");
     client.subscribe(topic_lampu_upright_0);
     client.subscribe(topic_lampu_upright_1);
+
+    server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
+    request->send(200, "text/plain", "Hi! I am ESP8266v3.");
+    });
+
+    AsyncElegantOTA.begin(&server);    // Start ElegantOTA
+    server.begin();
+    Serial.println("HTTP server started");
 }
 
 void callback(char *topic, byte *payload, unsigned int length)
@@ -154,4 +173,5 @@ void loop()
         client.publish(topic_bedroom_status_timestamp, char_array);
     }
     client.loop();
+    AsyncElegantOTA.loop();
 }
