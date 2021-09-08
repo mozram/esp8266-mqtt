@@ -23,8 +23,8 @@ const char *on = "ON";
 const char *off = "OFF";
 
 // WiFi
-const char *ssid = "CEF51_MaxisBroadband"; // Enter your WiFi name
-const char *password = "23230457";  // Enter WiFi password
+const char *ssid = "cr1tikal"; // Enter your WiFi name
+const char *password = "0177960340";  // Enter WiFi password
 
 // MQTT Broker
 const char *mqtt_broker = "90smobsters.com";
@@ -103,7 +103,7 @@ void setup()
     client.subscribe(topic_lampu_upright_1);
 
     server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
-    request->send(200, "text/plain", "Hi! I am ESP8266v3.");
+    request->send(200, "text/plain", "Hi! I am ESP8266v6.");
     });
 
     AsyncElegantOTA.begin(&server);    // Start ElegantOTA
@@ -158,6 +158,28 @@ void callback(char *topic, byte *payload, unsigned int length)
     if(command != NULL) free(command);
 }
 
+void reconnect()
+{
+    client.disconnect();
+    while (!client.connected())
+    {
+        String client_id = "esp8266-client-";
+        client_id += String(WiFi.macAddress());
+        Serial.printf("The client %s connects to the public mqtt broker\n", client_id.c_str());
+        if (client.connect(client_id.c_str(), mqtt_username, mqtt_password))
+        {
+            Serial.println("Public mqtt broker connected");
+        } 
+        else
+        {
+            Serial.print("failed with state ");
+            Serial.print(client.state());
+            delay(2000);
+            ESP.restart();
+        }
+    }
+}
+
 void loop()
 {
     static unsigned long lastHeartbeatMs = 0u;
@@ -169,8 +191,8 @@ void loop()
         char char_array[str_len];
         timestamp.toCharArray(char_array, str_len);
 
-        client.publish(topic_bedroom_status_state, "ACTIVE");
-        client.publish(topic_bedroom_status_timestamp, char_array);
+        if( !client.publish(topic_bedroom_status_state, "ACTIVE") ) reconnect();
+        if( !client.publish(topic_bedroom_status_timestamp, char_array) ) reconnect();
     }
     client.loop();
     AsyncElegantOTA.loop();
